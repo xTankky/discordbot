@@ -29,3 +29,12 @@ class Setup(commands.Cog):
     @commands.command()
     async def test(self, ctx):
         await nt.Success(ctx, "Test")
+
+    @commands.command()
+    async def source(self, ctx):
+        channel = ctx.author.dm_channel
+
+        if not channel:
+            channel = await ctx.author.create_dm()
+
+        await channel.send(content="https://github.com/xTankky/discordbot")
