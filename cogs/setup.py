@@ -1,5 +1,6 @@
 from discord.ext import commands
 import db
+import notifications as nt
 
 class Setup(commands.Cog):
     def __init__(self, bot):
@@ -9,9 +10,9 @@ class Setup(commands.Cog):
     async def on_ready(self):
         print("Bot Ready")
 
-        #! Database tests
-        for guild in self.bot.guilds:
-            await self.on_guild_join(guild)
+        # #! Database tests
+        # for guild in self.bot.guilds:
+        #     await self.on_guild_join(guild)
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -27,4 +28,4 @@ class Setup(commands.Cog):
 
     @commands.command()
     async def test(self, ctx):
-        print("test")
+        await nt.Success(ctx, "Test")
