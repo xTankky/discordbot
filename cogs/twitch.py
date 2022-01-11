@@ -1,5 +1,5 @@
-from twitchAPI.twitch import Twitch
 from discord.ext import commands, tasks
+from twitchAPI.twitch import Twitch
 from dotenv import load_dotenv
 import notifications as nt
 import discord

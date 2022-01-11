@@ -1,6 +1,6 @@
 from discord.ext import commands
-import db
 import notifications as nt
+import db
 
 class Setup(commands.Cog):
     def __init__(self, bot):
@@ -17,7 +17,7 @@ class Setup(commands.Cog):
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
         db.query("INSERT INTO Guilds VALUES (?, ?, ?)", guild.id, "!!",  guild.channels[0].id)
-    
+
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
         db.query("DELETE FROM Guilds WHERE id=?", guild.id)
