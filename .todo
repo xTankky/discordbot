@@ -1,0 +1,17 @@
+[*] - Prefix custom
+[ ] - Twitch :
+    [*] - Ajouter un streamer
+    [*] - Retirer un streamer
+    [*] - Notification de lancement de live
+    [ ] - Message personnalisé pour la notification de live
+[ ] - Tournois :
+    [ ] - Commencer le tournoi : (type, taille équipe)
+        [ ] - Création d'une catégorie dédiée
+        [ ] - Création d'un rôle dédié
+        [ ] - Création d'un text channel dédié
+        [ ] - Envoi d'un message sur le text channel
+        [ ] - Fonctionne avec les réactions : 
+            [ ] - S'ajouter au tournoi 
+            [ ] - Choisir le nombre de joueurs par équipe
+            [ ] - Commencer
+        [ ] - Création de salons vocaux pour chaque équipe
