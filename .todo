@@ -4,6 +4,7 @@
     [*] - Retirer un streamer
     [*] - Notification de lancement de live
     [ ] - Message personnalisé pour la notification de live
+    [ ] - Commande de base renvoie liste de streamers + channel en DM
 [ ] - Tournois :
     [ ] - Commencer le tournoi : (type, taille équipe)
         [ ] - Création d'une catégorie dédiée

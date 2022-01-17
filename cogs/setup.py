@@ -10,9 +10,9 @@ class Setup(commands.Cog):
     async def on_ready(self):
         print("Bot Ready")
 
-        # #! Database tests
-        # for guild in self.bot.guilds:
-        #     await self.on_guild_join(guild)
+        #! Database tests
+        for guild in self.bot.guilds:
+            await self.on_guild_join(guild)
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):

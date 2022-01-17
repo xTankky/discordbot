@@ -98,12 +98,14 @@ class TwitchBot(commands.Cog):
             data = self.twitch_api.get_streams(user_id=id)["data"] 
             # Data length is 0 when the streamer is offline
 
-            if len(data) > 0 and not online: # Streamer went online
+            # Streamer went online
+            if len(data) > 0 and not online: 
                 db.query("UPDATE TwitchStreamers SET online=? WHERE streamer=?", True, id)
                 guilds = db.fetch("SELECT guild FROM TwitchGuilds WHERE streamer=?", id)
                 profile_pic = self.twitch_api.get_users(user_ids=id)["data"][0]["profile_image_url"]
                 await self.send_notification(data[0], guilds, profile_pic)
-            elif len(data) == 0 and online: # Streamer went offline
+            # Streamer went offline
+            elif len(data) == 0 and online: 
                 db.query("UPDATE TwitchStreamers SET online=? WHERE streamer=?", False, id)
 
     async def send_notification(self, stream_data, guilds, profile_pic):
