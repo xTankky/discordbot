@@ -11,8 +11,8 @@ class Setup(commands.Cog):
         print("Bot Ready")
 
         #! Database tests
-        for guild in self.bot.guilds:
-            await self.on_guild_join(guild)
+        # for guild in self.bot.guilds:
+        #     await self.on_guild_join(guild)
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
@@ -23,8 +23,13 @@ class Setup(commands.Cog):
         db.query("DELETE FROM Guilds WHERE id=?", guild.id)
 
     @commands.command()
+    @commands.has_permissions(administrator=True)
     async def prefix(self, ctx, prefix: str):
-        db.query("UPDATE Guilds SET prefix=? WHERE id=?", prefix, ctx.guild.id)
+        try :
+            db.query("UPDATE Guilds SET prefix=? WHERE id=?", prefix, ctx.guild.id)
+            await nt.Success(ctx, f"Prefix changed to {prefix}")
+        except Exception as err:
+            await nt.Fail(ctx, err)
 
     @commands.command()
     async def test(self, ctx):
@@ -33,8 +38,6 @@ class Setup(commands.Cog):
     @commands.command()
     async def source(self, ctx):
         channel = ctx.author.dm_channel
-
         if not channel:
             channel = await ctx.author.create_dm()
-
         await channel.send(content="https://github.com/xTankky/discordbot")
