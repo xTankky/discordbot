@@ -1,6 +1,6 @@
 from discord.ext import commands
 import notifications as nt
-import db
+import data.db as db
 
 class Setup(commands.Cog):
     def __init__(self, bot):
@@ -9,27 +9,20 @@ class Setup(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print("Bot Ready")
-
-        #! Database tests
-        # for guild in self.bot.guilds:
-        #     await self.on_guild_join(guild)
+        db.save_files.start()
 
     @commands.Cog.listener()
     async def on_guild_join(self, guild):
-        db.query("INSERT INTO Guilds VALUES (?, ?, ?)", guild.id, "!!",  guild.channels[0].id)
+        db.add_guild(guild.id)
 
     @commands.Cog.listener()
     async def on_guild_remove(self, guild):
-        db.query("DELETE FROM Guilds WHERE id=?", guild.id)
+        db.data["guilds"].pop(str(guild.id), None)
 
     @commands.command()
     @commands.has_permissions(administrator=True)
     async def prefix(self, ctx, prefix: str):
-        try :
-            db.query("UPDATE Guilds SET prefix=? WHERE id=?", prefix, ctx.guild.id)
-            await nt.Success(ctx, f"Prefix changed to {prefix}")
-        except Exception as err:
-            await nt.Fail(ctx, err)
+        db.data["guilds"][str(ctx.guild.id)]["prefix"] = prefix
 
     @commands.command()
     async def test(self, ctx):

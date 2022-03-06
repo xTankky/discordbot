@@ -3,7 +3,7 @@ from twitchAPI.twitch import Twitch
 from dotenv import load_dotenv
 import notifications as nt
 import discord
-import db
+import data.db as db
 import os
 
 class TwitchBot(commands.Cog):
@@ -24,11 +24,6 @@ class TwitchBot(commands.Cog):
 
     @twitch.command()
     async def add(self, ctx, streamer):
-        """Adds a streamer to be notified when he lives
-
-        Args:
-            streamer (str): Streamer username
-        """
         try:
             res = self.twitch_api.get_users(logins=streamer)
             data = res["data"]
@@ -37,9 +32,13 @@ class TwitchBot(commands.Cog):
             if len(data) == 0:
                 raise Exception("Streamer not found")
 
-            id = data[0]["id"]
-            db.query("INSERT INTO TwitchStreamers VALUES (?, ?)", id, False)
-            db.query("INSERT INTO TwitchGuilds VALUES (?, ?)", id, ctx.guild.id)
+            streamerID = data[0]["id"]
+            db.data["streamers"][str(streamerID)] = {
+                "online": False,
+                "guilds": {
+                    f"{ctx.guild.id}" : ctx.channel.id
+                }
+            }
 
             await nt.Success(ctx, "Streamer added")
         except Exception as err:
@@ -48,11 +47,6 @@ class TwitchBot(commands.Cog):
 
     @twitch.command()
     async def remove(self, ctx, streamer):
-        """Removes a streamer
-
-        Args:
-            streamer (str): Streamer username
-        """
         try :
             data = self.twitch_api.get_users(logins=streamer)["data"]
 
@@ -60,13 +54,13 @@ class TwitchBot(commands.Cog):
             if len(data) == 0:
                 raise Exception("Streamer not found")
 
-            id = data[0]["id"]
-            db.query("DELETE FROM TwitchGuilds WHERE streamer=? AND guild=?", id, ctx.guild.id)
+            streamerID = data[0]["id"]
+            db.data["streamers"][str(streamerID)]["guilds"].pop(str(ctx.guild.id), None)
 
             # Remove Streamer from Streamers table if he is not in any more guild
-            count = db.fetch("SELECT COUNT(streamer) FROM TwitchGuilds WHERE streamer=?", id)[0][0] # List into tuple, yikes
+            count = len(db.data["streamers"][str(streamerID)]["guilds"])
             if count == 0:
-                db.query("DELETE FROM TwitchStreamers WHERE streamer=?", id)
+                db.data["streamers"].pop(str(streamerID))
 
             await nt.Success(ctx, "Streamer removed")
         except Exception as err:
@@ -74,14 +68,14 @@ class TwitchBot(commands.Cog):
 
     @twitch.command()
     async def channel(self, ctx, channel):
-        """Set the channel where notfications will be displayed
-
-        Args:
-            channel (mention): Channel mention
-        """
         try :
             _channel = await commands.TextChannelConverter().convert(ctx, channel)
-            db.query("UPDATE Guilds SET twitch_channel=? WHERE id=?", _channel.id, ctx.guild.id)
+
+            for streamer in db.data["streamers"].values():
+                print(streamer)
+                if str(ctx.guild.id) in streamer["guilds"]:
+                    streamer["guilds"][str(ctx.guild.id)] = _channel.id
+
             await nt.Success(ctx, f"Channel set to {_channel.name}")
         except Exception as err:
             await nt.Fail(ctx, str(err))
@@ -90,23 +84,24 @@ class TwitchBot(commands.Cog):
     async def update_streamers(self):
         """Updates the state of all streamers
         """
-        streamers = db.fetch("SELECT * FROM TwitchStreamers")
-
-        for streamer in streamers:
-            id = streamer[0]
-            online = streamer[1]
-            data = self.twitch_api.get_streams(user_id=id)["data"] 
-            # Data length is 0 when the streamer is offline
+        for streamerID, data in db.data["streamers"].items():
+            APIdata = self.twitch_api.get_streams(user_id=streamerID)["data"] # Data length is 0 when streamer is offline
+            online = True if len(APIdata) > 0 else False
+            wasOnline = data["online"]  # Streamer previous online state
 
             # Streamer went online
-            if len(data) > 0 and not online: 
-                db.query("UPDATE TwitchStreamers SET online=? WHERE streamer=?", True, id)
-                guilds = db.fetch("SELECT guild FROM TwitchGuilds WHERE streamer=?", id)
-                profile_pic = self.twitch_api.get_users(user_ids=id)["data"][0]["profile_image_url"]
-                await self.send_notification(data[0], guilds, profile_pic)
+            if online and not wasOnline: 
+                data["online"] = True
+                profile_pic = self.twitch_api.get_users(user_ids=streamerID)["data"][0]["profile_image_url"]
+                await self.send_notification(APIdata[0], data["guilds"], profile_pic)
             # Streamer went offline
-            elif len(data) == 0 and online: 
-                db.query("UPDATE TwitchStreamers SET online=? WHERE streamer=?", False, id)
+            elif not online and wasOnline: 
+                data["online"] = False
+
+    #   Wait for bot to be ready before starting loop
+    @update_streamers.before_loop
+    async def before_update(self):
+        await self.bot.wait_until_ready()
 
     async def send_notification(self, stream_data, guilds, profile_pic):
         # Embed data to pass
@@ -126,9 +121,8 @@ class TwitchBot(commands.Cog):
         embed.add_field(name="Game", value=game, inline=False)
 
         # Send embed message in every guild
-        for guild in guilds :
-            _channel = db.fetch("SELECT twitch_channel FROM Guilds WHERE id=?", guild[0])[0][0]
-            channel = self.bot.get_channel(int(_channel))
+        for channelID in guilds.values():
+            channel = self.bot.get_channel(channelID)
             
             await channel.send(
                 content=f"@everyone {username} is now online at {stream_url} !",
