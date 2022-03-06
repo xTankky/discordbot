@@ -23,6 +23,7 @@ class Setup(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def prefix(self, ctx, prefix: str):
         db.data["guilds"][str(ctx.guild.id)]["prefix"] = prefix
+        await nt.Success(ctx, f"Prefix changed to {prefix}")
 
     @commands.command()
     async def test(self, ctx):
