@@ -72,7 +72,6 @@ class TwitchBot(commands.Cog):
             _channel = await commands.TextChannelConverter().convert(ctx, channel)
 
             for streamer in db.data["streamers"].values():
-                print(streamer)
                 if str(ctx.guild.id) in streamer["guilds"]:
                     streamer["guilds"][str(ctx.guild.id)] = _channel.id
 
